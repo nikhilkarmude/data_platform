@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Flag to control virtual environment creation
-VENV_FLAG=false
+VENV_FLAG=true
 
 # Name your virtual environment
-VENV_NAME="cdp-venv"
+VENV_NAME="dp-venv"
 
 if $VENV_FLAG ; then
     # Create the virtual environment
@@ -15,14 +15,14 @@ if $VENV_FLAG ; then
 fi
 
 # Upgrade pip
-pip install --upgrade pip
+pip3 install --upgrade pip
 
 # Install the libraries using requirements.txt
-pip install -r setup/requirements.txt
+pip3 install -r setup/requirements.txt
 
 if $VENV_FLAG ; then
     # Verify the installed libraries
-    pip freeze
+    pip3 freeze
 
     # Deactivate the virtual environment
     deactivate

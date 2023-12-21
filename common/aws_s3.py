@@ -1,4 +1,4 @@
-from aws_helper import AWSHelper
+from common.aws_helper import AWSHelper
 import logging
 
 logging.basicConfig(level=logging.INFO)

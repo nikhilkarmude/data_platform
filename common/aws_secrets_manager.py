@@ -1,10 +1,10 @@
 import json
 import logging
-from aws_helper import AWSHelper
+from common.aws_helper import AWSHelper
 
 import json
 import logging
-from aws_helper import AWSHelper
+from common.aws_helper import AWSHelper
 
 class SecretsManagerHelper:
     def __init__(self, profile=None):

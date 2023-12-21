@@ -1,3 +1,11 @@
+import os, sys
+# below lines are added so that we can run this file as - python ingestion.py
+# without facing module not found error.
+# If these lines are removed, then below import statements need to be modified.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+sys.path.append(project_root)
+
 from sqlalchemy import create_engine, MetaData, Table, delete, insert, update
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import select

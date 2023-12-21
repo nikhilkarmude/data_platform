@@ -1,6 +1,14 @@
+import os, sys
+# below lines are added so that we can run this file as - python ingestion.py
+# without facing module not found error.
+# If these lines are removed, then below import statements need to be modified.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+sys.path.append(project_root)
+
+
 import snowflake.connector
 import logging
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
