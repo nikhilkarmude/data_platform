@@ -5,8 +5,8 @@ from setuptools import setup, find_packages
 setup(
     name="finance_data_platform",
     version="0.0.1",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Nikhil Karmude",
+    author_email="nikhilkarmude@domain.com",
     description="A brief description of your project",
     packages=find_packages(), 
     install_requires=[ 
