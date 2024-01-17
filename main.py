@@ -39,11 +39,42 @@ def main():
     """
     The main function.
     """
-    source_to_raw()
+
+
 
 if __name__ == "__main__":
     main()
 
+
+
+import boto3
+
+s3 = boto3.client('s3')
+
+def get_file_size(bucket, key):
+    response = s3.head_object(Bucket=bucket, Key=key)
+    size = response['ContentLength']
+    return size
+
+bucket_name = 'Your Bucket Name'
+file_key = 'File Key or Path'  # This is the path to the file in the S3 bucket
+
+size_in_bytes = get_file_size(bucket_name, file_key)
+
+size_in_megabytes = size_in_bytes / (1024 * 1024)
+
+desired_file_size_mb = 250  # The desired output file size in MB
+num_partitions = max(1, round(size_in_megabytes / desired_file_size_mb))  # The number of partitions 
+
+if num_partitions > 1:
+    from pyspark.sql import SparkSession
+    spark = SparkSession.builder.appName('split_large_file').getOrCreate()
+
+    # read csv file into a dataframe
+    df = spark.read.csv('s3://{}/{}'.format(bucket_name, file_key))
+
+    # repartition the dataframe into the desired number of partitions
+    df.repartition(num_partitions).write.csv('path_to_output_directory')
 
 
 
