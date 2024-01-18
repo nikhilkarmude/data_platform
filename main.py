@@ -45,37 +45,42 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-
+import boto3
 from pyspark.context import SparkContext
 from awsglue.context import GlueContext
+
+bucket_name = 'input-bucket-name' # replace with your bucket name
+file_key = 'path-to-input-file' # replace with your file path
+output_folder = 'output-folder-name' # replace with your output folder name
+
+def get_file_size(bucket, key):
+    s3 = boto3.client('s3')
+    response = s3.head_object(Bucket=bucket, Key=key)
+    size = response['ContentLength']
+    return size
+
+size_in_bytes = get_file_size(bucket_name, file_key)
+size_in_megabytes = size_in_bytes / (1024 * 1024)
+
+desired_file_size_mb = 250 # replace with your desired chunk size in MB
+num_partitions = max(1, round(size_in_megabytes / desired_file_size_mb))
 
 sc = SparkContext()
 glueContext = GlueContext(sc)
 
-# Define your input folder
-input_folder = 's3://path_to_input_folder/*'
-
-# Read all the files in the input folder into a DynamicFrame
+# Reading the file from S3 using GlueContext
 dynamic_frame = glueContext.create_dynamic_frame.from_options(
-    connection_type="s3", 
-    connection_options={"paths": [input_folder]}, 
-    format="csv"
-)
+    connection_type="s3",
+    connection_options={"paths": [f"s3://{bucket_name}/{file_key}"]},
+    format="csv")
 
-# Coalesce the DynamicFrame to one partition
-coalesced_dyf = dynamic_frame.coalesce(1)
+# Repartitioning DynamicFrame
+dynamic_frame = DynamicFrame.fromDF(dynamic_frame.toDF().repartition(num_partitions), glueContext, 'dynamic_frame')
 
-# Define your output folder (don't include filename)
-output_folder = 's3://path_to_output_folder'
-
-# Export data as a single CSV file
-glueContext.write_dynamic_frame.from_options(
-    frame = coalesced_dyf, 
-    connection_type = "s3", 
-    connection_options = {"path": output_folder},
-    format = "csv"
-)
+# Writing dynamic frame to S3 in CSV format
+glueContext.write_dynamic_frame.from_options(frame = dynamic_frame,
+                                             connection_options = {"path": f's3://{bucket_name}/{output_folder}'},
+                                             format = "csv", transformation_ctx = "datasink")
 
 
 
