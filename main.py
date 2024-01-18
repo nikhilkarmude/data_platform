@@ -51,44 +51,46 @@ from awsglue.utils import getResolvedOptions
 from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
+from awsglue.dynamicframe import DynamicFrame
 
 sc = SparkContext()
 glueContext = GlueContext(sc)
-job = Job(glueContext)
-job.init('json-job', args)
+spark = glueContext.spark_session
 
-# Specify your bucket name and prefix
-bucket_name = 'your-bucket-name'
-prefix = 'input/'
 
-# Create a DynamicFrame from all the JSON files under the prefix in the S3 bucket
-json_dyf = glueContext.create_dynamic_frame.from_catalog(database='json_db',
-                                                          table_name='json_table',
-                                                          transformation_ctx='json_dyf')
+def split_large_json_file(bucket_name, large_file_path, job_name, num_records, small_file_path):
+    job = Job(glueContext)
+    job.init(job_name, args)
 
-# Identify JSON schema and flatten it 
-relationalized_json_dyf = json_dyf.relationalize("root", "s3://"+bucket_name+"/tempDir/")
+    # Read the large JSON file from S3 bucket into a DynamicFrame
+    json_dyf = glueContext.create_dynamic_frame.from_options(
+        's3',
+        {'paths': [f's3://{bucket_name}/{large_file_path}']},
+        format_options={'withHeader': True, 'inferSchema': True},
+        format='json'
+    )
 
-# Loop over the DynamicFrames in the relationalized DynamicFrameCollection
-for df_name, json_df in relationalized_json_dyf.items():
-    # Convert from DynamicFrame to DataFrame
-    json_data_df = json_df.toDF()
-    
-    # Repartition DataFrame
-    num_records = 5000
-    num_partitions = int(json_data_df.count() / num_records)
-    if json_data_df.count() % num_records != 0: num_partitions += 1
-    json_data_df = json_data_df.repartition(num_partitions)
-    
+    num_partitions = int(json_dyf.count() / num_records)
+    if json_dyf.count() % num_records != 0:
+        num_partitions += 1
+
+    # Convert DynamicFrame to DataFrame and Repartition
+    json_df = json_dyf.toDF()
+    json_df = json_df.repartition(num_partitions)
+
     # Convert DataFrame back to DynamicFrame 
-    json_combined_dyf = DynamicFrame.fromDF(json_data_df, glueContext, "json_combined_dyf")
+    rebinned_dyf = DynamicFrame.fromDF(json_df, glueContext, "rebinned_dyf")
 
-    # Save as separate JSON files
+    # Write the partitions as separate JSON files back to S3
     glueContext.write_dynamic_frame.from_options(
-        frame = json_combined_dyf,
+        frame = rebinned_dyf,
         connection_type = "s3",
-        connection_options = {"path": f"s3://{bucket_name}/output/{df_name}" },
+        connection_options = {"path": f"s3://{bucket_name}/{small_file_path}"},
         format = "json"
     )
 
-job.commit()
+    job.commit()
+
+# call the function with required parameters
+split_large_json_file(bucket_name='mybucket', large_file_path='large-file.json', job_name='myjob', num_records=5000, small_file_path='small-file.json')
+
