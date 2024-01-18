@@ -47,34 +47,36 @@ if __name__ == "__main__":
 
 
 
-import boto3
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
 
-s3 = boto3.client('s3')
+sc = SparkContext()
+glueContext = GlueContext(sc)
 
-def get_file_size(bucket, key):
-    response = s3.head_object(Bucket=bucket, Key=key)
-    size = response['ContentLength']
-    return size
+# Define your input folder
+input_folder = 's3://path_to_input_folder/*'
 
-bucket_name = 'Your Bucket Name'
-file_key = 'File Key or Path'  # This is the path to the file in the S3 bucket
+# Read all the files in the input folder into a DynamicFrame
+dynamic_frame = glueContext.create_dynamic_frame.from_options(
+    connection_type="s3", 
+    connection_options={"paths": [input_folder]}, 
+    format="csv"
+)
 
-size_in_bytes = get_file_size(bucket_name, file_key)
+# Coalesce the DynamicFrame to one partition
+coalesced_dyf = dynamic_frame.coalesce(1)
 
-size_in_megabytes = size_in_bytes / (1024 * 1024)
+# Define your output folder (don't include filename)
+output_folder = 's3://path_to_output_folder'
 
-desired_file_size_mb = 250  # The desired output file size in MB
-num_partitions = max(1, round(size_in_megabytes / desired_file_size_mb))  # The number of partitions 
+# Export data as a single CSV file
+glueContext.write_dynamic_frame.from_options(
+    frame = coalesced_dyf, 
+    connection_type = "s3", 
+    connection_options = {"path": output_folder},
+    format = "csv"
+)
 
-if num_partitions > 1:
-    from pyspark.sql import SparkSession
-    spark = SparkSession.builder.appName('split_large_file').getOrCreate()
-
-    # read csv file into a dataframe
-    df = spark.read.csv('s3://{}/{}'.format(bucket_name, file_key))
-
-    # repartition the dataframe into the desired number of partitions
-    df.repartition(num_partitions).write.csv('path_to_output_directory')
 
 
 
