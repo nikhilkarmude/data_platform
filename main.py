@@ -137,3 +137,70 @@ def split_large_txt_file(bucket_name, large_file_path, job_name, num_records, sm
 
 # call the function with required parameters
 split_large_txt_file(bucket_name='mybucket', large_file_path='large-file.txt', job_name='myjob', num_records=5000, small_file_path='small-file.txt')
+
+
+
+from airflow import DAG
+from airflow.operators.python_operator import PythonOperator
+from airflow.utils.dates import days_ago
+import json
+import boto3
+import base64
+from botocore.exceptions import BotoCoreError, ClientError
+from sqlalchemy import create_engine
+
+class Snowflake:
+    def __init__(self, endpoint, region_name, secret_name):
+        session = boto3.session.Session(region_name=region_name)
+        client = session.client(
+            service_name='secretsmanager',
+            endpoint_url=endpoint
+        )
+
+        try:
+            get_secret_value_response = client.get_secret_value(
+                SecretId=secret_name
+            )
+        except ClientError as e:
+            raise Exception("Couldn't retrieve the secret") from e
+        else:
+            if 'SecretString' in get_secret_value_response:
+                secrets = json.loads(get_secret_value_response['SecretString'])
+            else:
+                secrets = json.loads(base64.b64decode(get_secret_value_response['SecretBinary']))
+
+            conn_string = f"snowflake://{secrets['username']}:{secrets['password']}@{secrets['account']}"
+            self.engine = create_engine(conn_string)
+
+    def query(self, sql): 
+        with self.engine.connect() as connection:
+            result_set = connection.execute(sql)
+            for result in result_set:
+                print(result)
+
+def query_snowflake():
+    # Define AWS and Snowflake configuration
+    endpoint = 'https://secretsmanager.your-region.amazonaws.com'
+    region_name = 'your-region'
+    secret_name = 'your-secret-name'
+    sf = Snowflake(endpoint, region_name, secret_name)
+    sf.query("SELECT current_version()")
+
+# Define the DAG
+dag = DAG(
+    'snowflake_python_operator_example',
+    default_args={
+        'owner': 'airflow',
+    },
+    schedule_interval=None,
+    start_date=days_ago(2),
+    tags=['example'],
+)
+
+task = PythonOperator(
+    task_id='python_operator_task',
+    python_callable=query_snowflake,
+    dag=dag
+)
+
+task
