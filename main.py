@@ -150,12 +150,14 @@ from botocore.exceptions import BotoCoreError, ClientError
 from sqlalchemy import create_engine
 import logging
 import os
+from airflow.hooks.base_hook import BaseHook
 
 class Snowflake:
-    def __init__(self, aws_profile=None, role_arn=None, region=None, secret_name=None):
+    def __init__(self, conn_id, aws_profile=None, role_arn=None, region=None, secret_name=None):
         self.session = self.create_boto3_session(aws_profile, role_arn, region)
         self.client = self.session.client(service_name='secretsmanager')
         self.secret_name = secret_name
+        self.conn_id = conn_id
 
     def create_boto3_session(self, aws_profile=None, role_arn=None, region=None):
         """
@@ -200,8 +202,9 @@ class Snowflake:
                 secrets = json.loads(get_secret_value_response['SecretString'])
             else:
                 secrets = json.loads(base64.b64decode(get_secret_value_response['SecretBinary']))
-
-        conn_string = f"snowflake://{secrets['username']}:{secrets['password']}@{secrets['account']}"
+        
+        conn = BaseHook.get_connection(self.conn_id)
+        conn_string = f"snowflake://{conn.login}:{conn.password}@{conn.host}"
         engine = create_engine(conn_string)
         
         with engine.connect() as connection:
@@ -215,7 +218,8 @@ def query_snowflake():
     role_arn = 'your-role-arn'
     region = 'your-region'
     secret_name = 'your-secret-name'
-    sf = Snowflake(aws_profile=aws_profile, role_arn=role_arn, region=region, secret_name=secret_name)
+    conn_id = 'your_snowflake_conn'
+    sf = Snowflake(conn_id, aws_profile=aws_profile, role_arn=role_arn, region=region, secret_name=secret_name)
     sf.query("SELECT current_version()")
 
 # Define the DAG
@@ -236,3 +240,4 @@ task = PythonOperator(
 )
 
 task
+
