@@ -56,3 +56,25 @@ class AWSHelper:
                 raise ValueError("Either 'aws_profile' or 'role_arn' must be provided.")
         logging.info('Successfully created Boto3 session.')
         return session
+
+
+    def get_role_info(self, session):
+        """
+        Gets the AWS Identity of the caller using the Boto3 session.
+
+        The caller is the entity that was used to get the session credentials. 
+        If the session was obtained using an IAM role (including AWS Glue or EC2 instance roles), 
+        the caller identity will be that of the role. If it's running on a local 
+        machine using profile credentials, the caller will be the IAM user of the profile.
+        
+        Parameters:
+        session (boto3.Session): The Boto3 session used for AWS API calls.
+
+        Returns:
+        dict: A dictionary containing the UserId, ARN, and AWS Account ID 
+            of the IAM user or role that is being used to make the calls.
+        """
+
+        sts = session.client('sts')
+        identity = sts.get_caller_identity()
+        return identity
