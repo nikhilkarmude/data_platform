@@ -275,3 +275,17 @@ class ABC:
 # results = abc.get_table_data(table_name="SYSTEM_CONTROL_TBL", schema_name=schema_name)
 # for row in results:
 #     print(row)
+
+import subprocess
+self.dump_file = "database_dump.sql"
+def dump_database(self):
+    try:
+        process = subprocess.Popen(
+            ['pg_dump', 
+                '--dbname=postgresql://{}:{}@{}:{}/{}'.format(self.user, self.password, self.host, self.port, self.database_1), 
+                '-f', self.dump_file],
+            stdout=subprocess.PIPE
+        )
+        output = process.communicate()[0]
+    except Exception as e:
+        print("An error occurred while taking database dump: ", str(e))
