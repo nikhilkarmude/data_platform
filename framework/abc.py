@@ -276,16 +276,10 @@ class ABC:
 # for row in results:
 #     print(row)
 
-import subprocess
-self.dump_file = "database_dump.sql"
-def dump_database(self):
-    try:
-        process = subprocess.Popen(
-            ['pg_dump', 
-                '--dbname=postgresql://{}:{}@{}:{}/{}'.format(self.user, self.password, self.host, self.port, self.database_1), 
-                '-f', self.dump_file],
-            stdout=subprocess.PIPE
-        )
-        output = process.communicate()[0]
-    except Exception as e:
-        print("An error occurred while taking database dump: ", str(e))
+    def load_sql_to_postgres_from_s3(self):
+        engine = self.get_engine()
+        with engine.connect() as connection:
+            with connection.begin() as transaction:
+                with open(self.sql_file_s3_address, 'r') as sql_file:
+                    sql_command = sql_file.read()
+                connection.execute(sql_command)
