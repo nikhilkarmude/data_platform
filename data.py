@@ -48,3 +48,48 @@ for pandas_df in [pandas_df2, pandas_df3]:
     for i in range(0, len(pandas_df), chunk_size):
         pandas_df[i:i + chunk_size].to_sql('your_table_name', engine, if_exists='append', index=False)
         print(f"Chunk {i//chunk_size + 1} loaded.")
+
+
+
+
+
+############################################
+import psycopg2
+import pandas as pd
+from snowflake.sqlalchemy import URL        
+from sqlalchemy import create_engine
+
+# Postgres connection parameters
+pg_params = {
+    "dbname": "your_dbname",
+    "user": "username",
+    "password": "password",
+    "host": "hostname",
+    "port": "portnumber"
+}
+
+# Connect to the Postgres database
+pg_conn = psycopg2.connect(**pg_params)
+
+# Load data from Postgres into pandas dataframes
+pandas_df2 = pd.read_sql("SELECT * FROM your_postgres_table1", pg_conn)
+pandas_df3 = pd.read_sql("SELECT * FROM your_postgres_table2", pg_conn)
+
+# Connection details for snowflake
+engine = create_engine(URL(
+    user="snowflake_username",
+    password="snowflake_password",
+    account="snowflake_account_url",
+    database="snowflake_database_name",
+    schema="snowflake_schema_name",
+    warehouse="snowflake_warehouse_name"
+))
+
+# Chunk size
+chunk_size = 10000
+
+# Write the pandas dataframes to snowflake in chunks
+for pandas_df in [pandas_df2, pandas_df3]:
+    for i in range(0, len(pandas_df), chunk_size):
+        pandas_df[i:i + chunk_size].to_sql('your_snowflake_tablename', engine, if_exists='append', index=False)
+        print(f"Chunk {i//chunk_size + 1} loaded.")
