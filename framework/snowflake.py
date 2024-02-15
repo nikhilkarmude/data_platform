@@ -48,7 +48,7 @@ class SnowflakeDB:
         self.logger.info("Snowflake Database connection established.")
         return create_engine(connection_string)
 
-    def select_data(self, schema_name: str, table_name: str, where_conditions: dict = None) -> pd.DataFrame:
+    def select_data(self, schema_name: str, table_name: str, where_conditions: dict = None) -> list:
         """
         Fetches and returns rows from the specified table that match the 'where' condition.
 
@@ -58,15 +58,16 @@ class SnowflakeDB:
         where_conditions (dict): Dictionary with column names as keys and corresponding values as conditions to select rows.
 
         Returns:
-        pandas.DataFrame: DataFrame containing fetched data.
+        list: List of tuples representing the fetched data, with each tuple representing a row in the result.
 
         Example Usage Without WHERE condition:
         results = db.select_data("MY_SCHEMA", "MY_TABLE")
 
         Example Usage WITH WHERE condition:
         where_conditions = {
-            "SYSTEM_NAME": "Test System",
-            "SYSTEM_INSTANCE": "1"
+            "COL1": "value1",
+            "COL2": "value2",
+            "COL3": "value3"
         }
         results = db.select_data("MY_SCHEMA", "MY_TABLE", where_conditions)
         """
@@ -75,9 +76,11 @@ class SnowflakeDB:
         if where_conditions:
             conditions_str = ' AND '.join([f'"{k}" = \'{v}\'' for k, v in where_conditions.items()])
             query += f' WHERE {conditions_str}'
-        df = pd.read_sql_query(query, self.get_engine())
-        self.logger.info(f"Fetched {len(df)} rows from Snowflake table: {table_name}")
-        return df
+        with self.get_engine().connect() as connection:
+            result = connection.execute(text(query))
+        rows = result.fetchall()  # list of tuples
+        self.logger.info(f"Fetched {len(rows)} rows from Snowflake table: {table_name}")
+        return rows
 
     def insert_data(self, schema_name: str, table_name: str, data: list) -> None:
         """
