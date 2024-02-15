@@ -177,3 +177,27 @@ class SnowflakeDB:
         except Exception as e:
             self.logger.error(f"An error occurred: {e}")
             raise ArgumentError(f"An error occurred when executing the SQL statement: {query}. Error: {e}")
+
+
+    def insert__bulk_data(self, schema_name: str, table_name: str, data: list) -> None:
+        """
+        Inserts new rows into the specified table with provided data.
+
+        Parameters:
+        schema_name (str): Name of the schema in which the table is located.
+        table_name (str): Name of the table to insert data into.
+        data (list): List of dictionaries containing column names as keys and corresponding data as values.
+                    Each dictionary represents a row to be inserted.
+        """
+        self.logger.info(f"Inserting data into Snowflake table: {table_name}")
+        keys_list = ', '.join([f'"{k}"' for k in data[0].keys()])
+        rows_str_list = []
+        for row in data:
+            values_list = ', '.join([f"'{v}'" for v in row.values()])
+            row_str = f'({values_list})'
+            rows_str_list.append(row_str)
+        all_rows_str = ', '.join(rows_str_list)
+        query = f'INSERT INTO "{schema_name}"."{table_name}" ({keys_list}) VALUES {all_rows_str}'
+        with self.get_engine().begin() as conn:
+            conn.execute(text(query))
+        self.logger.info(f"Inserted {len(data)} rows into Snowflake table: {table_name}")
