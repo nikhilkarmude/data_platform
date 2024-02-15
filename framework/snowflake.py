@@ -147,3 +147,33 @@ class SnowflakeDB:
         with self.get_engine().begin() as connection:
             connection.execute(text(query))
         self.logger.info(f"Data updated in the Snowflake table: {table_name}")
+
+    def execute_sql_query(self, query: str) -> list:
+        """
+        Executes a SQL query on the Snowflake database.
+
+        Parameters:
+        query (str): A string containing a valid SQL query.
+
+        Returns:
+        A list of dictionaries, each dictionary represents a row of the result. Keys are column names, 
+        values are data in respective columns for a particular row.
+
+        Raises:
+        ArgumentError: An error occurred when executing the SQL statement.
+
+        Example Usage:
+        results = db.execute_sql_query('SELECT * FROM MYSCHEMA.MYTABLE')
+        for row in results:
+            print(row)
+        """
+        try:
+            with self.get_engine().connect() as connection:
+                result = connection.execute(text(query))  # ResultProxy that acts like a Cursor
+            self.logger.info(f"SQL query executed: {query}")
+            rows = [dict(row) for row in result]
+            return rows
+
+        except Exception as e:
+            self.logger.error(f"An error occurred: {e}")
+            raise ArgumentError(f"An error occurred when executing the SQL statement: {query}. Error: {e}")
