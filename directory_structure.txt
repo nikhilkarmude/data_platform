@@ -1,4 +1,4 @@
-.
+finance_data_platform
 ├── common
 │   ├── __init__.py
 │   ├── api_helper.py
@@ -10,22 +10,14 @@
 │   ├── __init__.py
 │   ├── aws_config.py
 │   └── database_config.py
-├── deploy.py
-├── directory_structure.txt
 ├── framework
 │   ├── __init__.py
 │   ├── abc.py
 │   ├── ingestion.py
 │   └── snowflake.py
 ├── main.py
-├── onboarding
-│   ├── __init__.py
-│   └── onboard.py
 ├── readme.md
-└── setup
-    ├── __init__.py
-    ├── aws_profile.sh
-    ├── requirements.txt
-    └── setup-app.sh
+├── __init__.py
+
 
 6 directories, 23 files

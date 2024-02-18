@@ -1,0 +1,12 @@
+--constraint "/usr/local/airflow/requirements/constraints.txt"
+--find-links /usr/local/airflow/plugins
+--no-index
+
+
+snowflake_sqlalchemy
+smart_open
+finance_data_platform
+
+
+ 
+

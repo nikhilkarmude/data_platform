@@ -187,7 +187,49 @@ class S3Helper:
         self.s3.delete_object(Bucket=bucket_name, Key=object_name)
         logging.info(f'Object {object_name} deleted from bucket {bucket_name}.')
 
+    # Add rename_file_name method to the class
+    def rename_file_name(self, bucket_name, existing_file_name, new_file_name):
+        """Rename an existing file in a given S3 bucket.
 
+        This method copies the existing file to new file and then deletes
+        the existing file.
+
+        Args:
+        bucket_name (str): The name of the bucket with the file.
+        existing_file_name (str): The existing name of the file.
+        new_file_name (str): The new name of the file.
+        """
+        logging.info(f'Renaming file {existing_file_name} to {new_file_name}...')
+        # Copy the file to new file
+        self.s3.copy_object(
+            Bucket=bucket_name,
+            CopySource={'Bucket': bucket_name, 'Key': existing_file_name},
+            Key=new_file_name)
+        # Removing the old file
+        self.s3.delete_object(Bucket=bucket_name, Key=existing_file_name)
+
+    # Add move_files method to the class
+    def move_files(self, bucket_name, new_bucket_name, file_name):
+        """Move a given file from one S3 bucket to another.
+
+        This method copies the existing file from the existing_bucket to 
+        new_bucket and then deletes the existing file from existing_bucket.
+
+        Args:
+        bucket_name (str): The name of the existing bucket with the file.
+        new_bucket_name (str): The name of the new bucket to which the file is to be moved.
+        file_name (str): The name of the file.
+        """
+        logging.info(f'Moving file {file_name} from bucket {bucket_name} to {new_bucket_name}')
+        
+        # Copy the file to new bucket
+        self.s3.copy_object(
+            Bucket=new_bucket_name,
+            CopySource={'Bucket': bucket_name, 'Key': file_name},
+            Key=file_name)
+        
+        # Removing the file from old bucket
+        self.s3.delete_object(Bucket=bucket_name, Key=file_name)
 
 # # Instantiate the class for a specific profile
 # s3_helper = S3Helper(profile='default')
