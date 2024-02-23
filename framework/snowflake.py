@@ -201,3 +201,22 @@ class SnowflakeDB:
         with self.get_engine().begin() as conn:
             conn.execute(text(query))
         self.logger.info(f"Inserted {len(data)} rows into Snowflake table: {table_name}")
+
+
+    def call_stored_procedure(self, schema_name: str, procedure_name: str, args: str) -> None:
+        """
+        Calls a stored procedure with the provided arguments.
+
+        Args:
+            schema_name (str): Name of the schema in which the procedure is located.
+            procedure_name (str): Name of the stored procedure.
+            args (str): Comma-separated arguments to pass to the stored procedure.
+
+        Example usage:
+            db.call_stored_procedure('MYSCHEMA', 'MYPROCEDURE', 'arg1, arg2, arg3')
+        """
+        self.logger.info(f"Calling stored procedure: {procedure_name}")
+        query = f'CALL "{schema_name}"."{procedure_name}"({args})'
+        with self.get_engine().begin() as connection:
+            connection.execute(text(query))
+        self.logger.info(f"Executed the stored procedure: {procedure_name}")
