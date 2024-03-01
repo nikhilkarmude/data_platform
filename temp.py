@@ -20,6 +20,22 @@ def decrypt_data_base64(data):
     ciphertext = decoded[12:]  # Rest is the ciphertext
     return aesgcm.decrypt(nonce, ciphertext, None).decode('utf-8')
 
+def main(session: snowpark.session):
+    table_name = 'EMPLOYEE'
+    dataframe = session.table(table_name)
+    results = dataframe.collect()
+    pandas_df = pd.Dataframe(results, columns = dataframe.columns)
+
+    cols_to_decrypt = ['SSN', 'Salary']
+
+    for col in cols_to_decrypt:
+        pandas_df[col] = pandas_df[col].apply(decrypt_data_base64)
+
+    snowflake_df = session.create_dataframe(pandas_df)
+
+    return snowflake_df
+
+
 temp_text = "Hello, World!"
 print(f"Original Text: {temp_text}")
 
