@@ -153,3 +153,28 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+#
+    The `AESGCM.generate_key(bit_length=256)` function from the `cryptography` library generates a random 256-bit key for AESGCM.
+
+However, the generated key is a bytes object. If you want to store it in Secrets Manager, you should first convert it to a base64 string:
+
+```python
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+import base64
+
+key = AESGCM.generate_key(bit_length=256)
+base64_key = base64.b64encode(key).decode('utf-8')
+```
+
+And when you want to use it, get the secret as a string and then convert the base64 string back to bytes:
+
+```python
+# Assuming encryption_key_secret is a string retrieved from Secrets Manager
+key = base64.b64decode(encryption_key_secret)
+cryptographer = Cryptographer(key)
+```
+
+Ensure your encryption key in AWS Secrets Manager is a base64 encoded string formed as shown above. This is the usual convention of storing byte data in string format. You should not store and retrieve the bytes key directly as string. If you did so, you may need to update your secret to base64 format as shown above.
