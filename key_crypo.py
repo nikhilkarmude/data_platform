@@ -43,3 +43,13 @@ class AsymmetricCipher:
             format=serialization.PrivateFormat.PKCS8,
             encryption_algorithm=serialization.NoEncryption()
         )
+
+
+# Replace with your actual keys
+private_key_pem = b'-----BEGIN PRIVATE KEY-----\n...'
+public_key_pem = b'-----BEGIN PUBLIC KEY-----\n...'
+
+cipher = AsymmetricCipher(private_key_pem, public_key_pem)
+message = b'A secret message'
+encrypted = cipher.encrypt(message) 
+decrypted = cipher.decrypt(encrypted) 
