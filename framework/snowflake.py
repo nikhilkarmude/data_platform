@@ -278,8 +278,15 @@ def execute_stored_proc(self, schema_name: str, stored_proc_name: str, params: l
     db.execute_stored_proc("MY_SCHEMA", "MY_STORED_PROCEDURE", ["param1", "param2", "param3"])
     """
     self.logger.info(f"Executing stored procedure: {stored_proc_name}")
-    query = f'CALL "{schema_name}"."{stored_proc_name}"({", ".join(["?" for _ in params])})'
-    with self.get_engine().begin() as connection:
-        connection.execute(text(query), params)
+    if params is None:
+        query = f'CALL "{schema_name}"."{stored_proc_name}"()'
+        with self.get_engine().begin() as connection:
+            connection.execute(text(query))
+    else:
+        placeholders = ', '.join(['?' for _ in params])
+        query = f'CALL "{schema_name}"."{stored_proc_name}"({placeholders})'
+        with self.get_engine().begin() as connection:
+            connection.execute(text(query), params)
     self.logger.info(f"Executed the stored procedure: {stored_proc_name}")
+
 
