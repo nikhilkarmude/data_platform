@@ -220,3 +220,66 @@ class SnowflakeDB:
         with self.get_engine().begin() as connection:
             connection.execute(text(query))
         self.logger.info(f"Executed the stored procedure: {procedure_name}")
+
+
+
+        def delete_data(self, schema_name: str, table_name: str, where_conditions: dict) -> None:
+    """
+    Deletes rows in the specified table that match the 'where' conditions.
+
+    Parameters:
+    schema_name (str): Name of the schema in which the table is located.
+    table_name (str): Name of the table from which to delete data.
+    where_conditions (dict): Dictionary with column names as keys and corresponding values as conditions to select rows for deletion.
+
+    Example Usage:
+    where_conditions = {
+        "COL1": "value1",
+        "COL2": "value2",
+        "COL3": "value3"
+    }
+    db.delete_data("MY_SCHEMA", "MY_TABLE", where_conditions)
+    """
+    self.logger.info(f"Deleting data from Snowflake table: {table_name}")
+    where_clause = ' AND '.join([f'"{k}" = \'{v}\'' for k, v in where_conditions.items()])
+    query = f'DELETE FROM "{schema_name}"."{table_name}" WHERE {where_clause}'
+    with self.get_engine().begin() as connection:
+        connection.execute(text(query))
+    self.logger.info(f"Data deleted from the Snowflake table: {table_name}")
+    
+
+def truncate_table(self, schema_name: str, table_name: str) -> None:
+    """
+    Truncates the specified table in the Snowflake database.
+
+    Parameters:
+    schema_name (str): Name of the schema in which the table is located.
+    table_name (str): Name of the table to truncate.
+
+    Example Usage:
+    db.truncate_table("MY_SCHEMA", "MY_TABLE")
+    """
+    self.logger.info(f"Truncating Snowflake table: {table_name}")
+    query = f'TRUNCATE TABLE "{schema_name}"."{table_name}"'
+    with self.get_engine().begin() as connection:
+        connection.execute(text(query))
+    self.logger.info(f"Truncated the Snowflake table: {table_name}")
+
+def execute_stored_proc(self, schema_name: str, stored_proc_name: str, params: list = None) -> None:
+    """
+    Executes a stored procedure in the Snowflake database.
+
+    Parameters:
+    schema_name (str): Name of the schema in which the stored procedure is located.
+    stored_proc_name (str): Name of the stored procedure to execute.
+    params (list): List of parameters to pass to the stored procedure.
+
+    Example Usage:
+    db.execute_stored_proc("MY_SCHEMA", "MY_STORED_PROCEDURE", ["param1", "param2", "param3"])
+    """
+    self.logger.info(f"Executing stored procedure: {stored_proc_name}")
+    query = f'CALL "{schema_name}"."{stored_proc_name}"({", ".join(["?" for _ in params])})'
+    with self.get_engine().begin() as connection:
+        connection.execute(text(query), params)
+    self.logger.info(f"Executed the stored procedure: {stored_proc_name}")
+
