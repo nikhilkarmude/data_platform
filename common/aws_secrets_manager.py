@@ -61,23 +61,34 @@ class SecretsManagerHelper:
         )
         logging.info(f'Secret {secret_name} successfully created.')
 
-    def update_secret(self, secret_name, secret_value):
+def update_secret(self, secret_name, new_pair):
         """
-        Update the value of an existing secret. This example assumes the secret value is a JSON string.
-        
+        Append a new key-value pair to an existing secret.
+
         Parameters:
         secret_name (str): The name of the secret.
-        secret_value (dict): A dictionary representing the new secret value.
-
-        Usage:
-        secretsmanager_helper.update_secret('my-secret', {"username":"new-username", "password":"new-password"})
+        new_pair (dict): A dictionary representing the new key-value pair.
         """
         logging.info(f'Updating secret {secret_name}...')
+        
+        # First retrieve the existing secret value
+        response = self.sm_client.get_secret_value(
+            SecretId=secret_name
+        )
+        
+        # Load the secret value (assumed to be in json format)
+        secret_value = json.loads(response['SecretString'])
+        
+        # Append new key-value pair to the existing secret value
+        secret_value.update(new_pair)
+        
+        # Update the secret value
         self.sm_client.update_secret(
             SecretId=secret_name,
             SecretString=json.dumps(secret_value)
         )
         logging.info(f'Secret {secret_name} successfully updated.')
+
 
     def delete_secret(self, secret_name):
         """
